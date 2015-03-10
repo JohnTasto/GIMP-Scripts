@@ -1,18 +1,30 @@
 ; make-rotationally-seamless.scm
-; version 1.0
+; version 1.1
 ;
 ; This is Script-Fu program written for GIMP 2.8.
 ;
 ; Its purpose is to help create texture images that can not only be tiled
-; through translation, but also when combined with flipping and rotation.
+; through translation, but also when combined with flipping and rotation.  It
+; works by taking one half of one side and flipping and rotating it around the
+; other edges.  It leaves the original image as a layer underneath so you can
+; fine tune the blending.
 ;
-; It does not do all the work for you, all it does is take one half of one side
-; and flip and rotate it around the other edges.  It leaves the original image
-; as a layer underneath, and you should erase most of the inside of the
-; generated layer to reveal the original image underneath.
+; Blend width (0 for full):
+;   Sets the blend width around the edge of the image.  If this is '0', it does
+;   not attempt to blend, instead it leaves the newly created layer for you to
+;   mask the middle and reveal the original image.
+;
+; Preview X tiles:
+; Preview Y tiles:
+;   If either (or both) of these are greater than '1', it will create a preview
+;   tiled image where the tiles are rotated and flipped randomly.  It will also
+;   create an additional undo point to easily go back to the untiled version
+;   without re-running the script.
 ;
 ; It works best on images that are mostly uniform and square, and although it
 ; will resize the image to make it square if necessary, it is not recommended.
+; This also leaves pretty obvious mirroring when tiled, so unless you blend it
+; manually, the results are usually less than spectacular.
 ;
 ;
 ; Copyright 2015 John Tasto
@@ -32,7 +44,10 @@
 
 (define (script-fu-make-rotationally-seamless image
                                               layerBase
-                                              sideStart)
+                                              sideStart
+                                              blend
+                                              tilesX
+                                              tilesY)
   (let* (
           (layerBasePosition (car (gimp-image-get-item-position image layerBase)))
           (width             (car (gimp-drawable-width layerBase)))
@@ -46,6 +61,8 @@
           (flip              0)
           (temp              0)
         )
+
+    (set! blend (round blend))
 
     ;sideStart: 
     ;0 Top left
@@ -197,6 +214,25 @@
       (gimp-image-rotate image ROTATE-90)
     )
 
+    (if (not (= blend 0))
+      (begin
+        (gimp-selection-all image)
+        (gimp-selection-shrink image (ceiling (/ blend 2)))
+        (gimp-selection-feather image blend)
+        (gimp-edit-clear layerComplete)
+        (gimp-selection-none image)
+      )
+    )
+
+    (if (or (not (= tilesX 1)) (not (= tilesY 1)))
+      (begin
+        (gimp-image-undo-group-end image)
+        (gimp-image-undo-group-start image)
+        (set! layerBase (car (gimp-image-merge-down image layerComplete CLIP-TO-IMAGE)))
+        (script-fu-tile-random-rotation image layerBase tilesX tilesY TRUE TRUE)
+      )
+    )
+
     (gimp-image-undo-group-end image)
     (gimp-displays-flush)
     (gimp-context-pop)
@@ -204,16 +240,19 @@
 )
 
 (script-fu-register "script-fu-make-rotationally-seamless"
-  _"_Make rotationally seamless..."
-  _"Copy, rotate, and flip half of one edge of the image around its border (must be square!)"
+  _"Make _rotationally seamless..."
+  _"Copy, rotate, and flip half of one edge of the image around its border"
   "John Tasto <john@tasto.net>"
   "John Tasto"
   "2015/03/03"
   "RGB* GRAY* INDEXED*"
-  SF-IMAGE    "Image"    0
-  SF-DRAWABLE "Drawable" 0
-  SF-OPTION   _"Side to duplicate" '("Top left" "Top right" "Bottom left" "Bottom right"
-                                     "Left top" "Left bottom" "Right top" "Right bottom")
+  SF-IMAGE      "Image"    0
+  SF-DRAWABLE   "Drawable" 0
+  SF-OPTION     _"Side to duplicate"        '("Top left" "Top right" "Bottom left" "Bottom right"
+                                            "Left top" "Left bottom" "Right top" "Right bottom")
+  SF-ADJUSTMENT _"Blend width (0 for full)" '(3 0 1024 1 8 0 SF-SPINNER)
+  SF-ADJUSTMENT _"Preview X tiles"          '(1 1 256  1 1 0 SF-SPINNER)
+  SF-ADJUSTMENT _"Preview Y tiles"          '(1 1 256  1 1 0 SF-SPINNER)
 )
 
 (script-fu-menu-register "script-fu-make-rotationally-seamless"
