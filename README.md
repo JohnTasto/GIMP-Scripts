@@ -4,6 +4,8 @@ A collection of several scripts for GIMP.
 
 - *defringe.scm:* fixes fringe discoloration on masked images
 - *make-rotationally-seamless.scm:* used to help make textures seamless on rotation and flip
+- *make-seamless-by-mirroring.scm:* makes textures seamless by mirroring them
+- *tile-random-rotation.scm:* preview tileable textures
 
 ## defringe.scm
 version 1.0
@@ -24,15 +26,37 @@ The settings are a bit cryptic, so here is a more detailed explaination of each:
 The three settings *Width of edge color to ignore*, *Width of edge border to replace*, and *Fringe blur amount* can be used in combination to rebuild the border of the opaque image, which can in many cases help correct bad edge lighting.  Setting the first two to *1* or *2* and setting a small blur amount will clean up the outer one or two pixels of the edge, but leave the overall shape the same.  Don't be afraid to play around with these, it is easy to undo and try different settings.
 
 ## make-rotationally-seamless.scm
+version 1.1
+
+This is Script-Fu program written for GIMP 2.8.
+
+Its purpose is to help create texture images that can not only be tiled through translation, but also when combined with flipping and rotation.  It works by taking one half of one side and flipping and rotating it around the other edges.  It leaves the original image as a layer underneath so you can fine tune the blending.
+
+- *Blend width (0 for full):* Sets the blend width around the edge of the image.  If this is '0', it does not attempt to blend, instead it leaves the newly created layer for you to mask the middle and reveal the original image.
+
+- *Preview X tiles:* *Preview Y tiles:* If either (or both) of these are greater than '1', it will create a preview tiled image where the tiles are rotated and flipped randomly.  It will also create an additional undo point to easily go back to the untiled version without re-running the script.
+
+It works best on images that are mostly uniform and square, and although it will resize the image to make it square if necessary, it is not recommended.  This also leaves pretty obvious mirroring when tiled, so unless you blend it manually, the results are usually less than spectacular.
+
+## make-seamless-by-mirroring.scm
 version 1.0
 
-This is a Script-Fu program written for GIMP 2.8.
+This is Script-Fu program written for GIMP 2.8.
 
-Its purpose is to help create texture images that can not only be tiled through translation, but also when combined with flipping and rotation.
+It creates a tileable image in perhaps the simplest way possible: by mirroring the image in both the x and y direction, leaving an image that is twice the original width and height.
 
-It does not do all the work for you, all it does is take one half of one side and flip and rotate it around the other edges.  It leaves the original image as a layer underneath, and you should erase most of the inside of the generated layer to reveal the original image underneath.
+- *Preview X tiles:* *Preview Y tiles: If either (or both) of these are greater than '1', it will create a preview tiled image.  It will also create an additional undo point to easily go back to the untiled version without re-running the script.
 
-It works best on images that are mostly uniform and square, and although it will resize the image to make it square if necessary, it is not recommended.
+## tile-random-rotation.scm
+version 1.0
+
+This is Script-Fu program written for GIMP 2.8.
+
+It tiles the image with optional random rotations and flipping, useful for previewing seams in a tileable texture.
+
+- *X Tiles:* *Y Tiles:* The number of tiles in the x and y direction.
+- *Rotate randomly:* If selected, each tile will be randomly rotated.
+- *Flip randomly:* If selected, each tile will be randomly flipped.
 
 ## License
 
