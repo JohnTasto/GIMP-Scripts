@@ -1,5 +1,5 @@
 ; defringe.scm
-; version 1.0
+; version 1.01
 ;
 ; This is Script-Fu program written for GIMP 2.8.
 ;
